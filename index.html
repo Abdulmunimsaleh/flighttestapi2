@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Travel Agency Chatbot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .chat-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .chat-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        height: 300px;
+        overflow-y: scroll;
+        margin-bottom: 10px;
+      }
+      .message {
+        margin-bottom: 10px;
+      }
+      .user-message {
+        text-align: right;
+        color: blue;
+      }
+      .bot-message {
+        text-align: left;
+        color: green;
+      }
+      input[type="text"] {
+        width: calc(100% - 80px);
+        padding: 10px;
+        margin-right: 10px;
+      }
+      button {
+        padding: 10px 20px;
+      }
+      .flight-results {
+        margin-top: 20px;
+      }
+      .flight-results ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      .flight-results li {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <h1>Travel Agency Chatbot</h1>
+      <div class="chat-box" id="chat-box">
+        <!-- Chat messages will appear here -->
+      </div>
+      <input type="text" id="user-input" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+
+      <h2>Flight Search</h2>
+      <button onclick="searchFlights()">Search Flights</button>
+      <div class="flight-results">
+        <ul id="flight-results">
+          <!-- Flight results will appear here -->
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      const chatBox = document.getElementById("chat-box");
+      const userInput = document.getElementById("user-input");
+      const flightResults = document.getElementById("flight-results");
+
+      // Function to send a message to the chatbot
+      async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // Add user message to the chat box
+        appendMessage("user-message", message);
+        userInput.value = "";
+
+        // Send message to the backend
+        const response = await fetch("http://localhost:5000/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        });
+        const data = await response.json();
+
+        // Add bot response to the chat box
+        appendMessage("bot-message", data.response);
+      }
+
+      // Function to search for flights
+      async function searchFlights() {
+        const response = await fetch("http://localhost:5000/search-flights", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            origin: "NYC",
+            destination: "LAX",
+            departureDate: "2023-12-01",
+            adults: 1,
+          }),
+        });
+        const data = await response.json();
+
+        // Display flight results
+        flightResults.innerHTML = "";
+        data.data.forEach((flight) => {
+          const li = document.createElement("li");
+          li.textContent = `${flight.itineraries[0].segments[0].departure.iataCode} to ${flight.itineraries[0].segments[0].arrival.iataCode}`;
+          flightResults.appendChild(li);
+        });
+      }
+
+      // Function to append a message to the chat box
+      function appendMessage(className, text) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${className}`;
+        messageDiv.textContent = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+      }
+    </script>
+  </body>
+</html>
